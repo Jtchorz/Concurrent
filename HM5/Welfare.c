@@ -29,46 +29,54 @@ int main(int argc, char *argv[]){
     //so all three processess have to have different code, first one just sends 
     //second one just recieves, and third one broadcasts the results
     //all first sort, then 2nd 
-//all can generate and sort in here as all do it
+//all can generate and sort in here as all do i
+
+    printf("Hello, The world has size %d and I have rank %d \n", size, rank);
     data[0] = 0;
-    for (int i = 1; i < arr_size; i++) 
-        data[i] = data[i - 1] + rand() % 999;     //this creates a sorted array with unique values
-    
-    
+    for (int i = 1; i < arr_size; i++) {
+        data[i] = data[i - 1] + (rand() % 99);     //this creates a sorted array with unique values
+    }
     if(rank == 0 ){
         for(int i = 0; i < arr_size; i++)
             MPI_Send(&data[i], 1, MPI_INT, rank+1, rank, MPI_COMM_WORLD);
-    }else if( rank != 3 ){
+        int temp = -1;
+        MPI_Send(&temp, 1, MPI_INT, rank+1, rank, MPI_COMM_WORLD);
+        
+    }else if( rank != size -1 ){
     //this code is actually scalable amnt of nodes, could be more than 3
     //in here we take in an int from the node before, match to our int, if it doesnt match, throw it away
-        int i = 0, possible;
-        while(i < arr_size){
+        int i = 0, possible = 0;
+        while(i < arr_size && possible != -1){
             MPI_Recv(&possible, 1, MPI_INT, rank-1, rank-1, MPI_COMM_WORLD, MPI_STATUS_IGNORE); 
-            while(i < arr_size && possible < data[i])
+            while(i < arr_size && possible > data[i])
                 i++;
             if(possible == data[i])
-                MPI_Send(&data[i], 1, MPI_INT, rank+1, rank, MPI_COMM_WORLD);        
-        }         
+                MPI_Send(&data[i], 1, MPI_INT, rank+1, rank, MPI_COMM_WORLD);       
+        } 
+        int temp = -1;
+        MPI_Send(&temp, 1, MPI_INT, rank+1, rank, MPI_COMM_WORLD);
+        while(possible != -1) 
+            MPI_Recv(&possible, 1, MPI_INT, rank-1, rank-1, MPI_COMM_WORLD, MPI_STATUS_IGNORE); 
     }else {
        //this is the congregating process, so it will write it's possibles to data and then broadcast
-        int i = 0, possible;
-        while(i < arr_size){
+        int i = 0, possible = 0;
+        while(i < arr_size && possible != -1){
             MPI_Recv(&possible, 1, MPI_INT, rank-1, rank-1, MPI_COMM_WORLD, MPI_STATUS_IGNORE); 
-            while(i < arr_size && possible < data[i])
+            while(i < arr_size && possible > data[i])
                 i++;
             if(possible == data[i]){
                 result[res_size] = possible;
                 res_size++;
             }
         }
+        while(possible != -1) 
+            MPI_Recv(&possible, 1, MPI_INT, rank-1, rank-1, MPI_COMM_WORLD, MPI_STATUS_IGNORE); 
     }
-
+    
     MPI_Bcast(&res_size, 1, MPI_INT, size-1, MPI_COMM_WORLD);
-
     for(int i = 0; i < res_size; i++){
         MPI_Bcast(&result[i], 1, MPI_INT, size-1, MPI_COMM_WORLD);
     }
-    
     for(int i = 0; i < size; i++){
         MPI_Barrier(MPI_COMM_WORLD);
         if(rank == i){
