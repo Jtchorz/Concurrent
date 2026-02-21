@@ -1,3 +1,7 @@
+/*usage:
+compile with: mpicc Welfare.c -o Welfare 
+execute with: mpiexec -np <number of processes> ./Welfare <sizeofarray>*/
+
 #include <mpi.h>   
 #include <stdio.h>
 #include <stdlib.h>
@@ -97,7 +101,7 @@ int main(int argc, char *argv[]){
             printf("this is rank %d and the array is: ", i); 
             for(int j = 0; j<res_size; j++)
                 printf("%d ", result[j]);
-            printf("\n");
+            printf("\n\n");
         }
     }
 
